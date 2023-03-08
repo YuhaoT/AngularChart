@@ -10,7 +10,7 @@ interface StockData {
   high: number;
   low: number;
   date: string;
-  ohlc: number;
+  ohcl_avg: number;
 }
 
 @Component({
@@ -27,25 +27,29 @@ export class ChartComponent implements OnInit{
   closes: number[] = [];
   highs: number[] = [];
   lows: number[] = [];
-  ohlc_avg: number[] = [];
+  ohcl_avg: number[] = [];
 
   ngOnInit(): void {
     //fetch data from the server
-    d3.json('http://127.0.0.1:8000/api/stockHistory/').then((data:unknown) => {
+    d3.csv('assets/snp_2y.csv').then((data:unknown) => {
       this.data = data as StockData[];
       this.parseData();
       this.drawChart();
     });
+    
   }
 
   // parse data from the server
   parseData(): void {
     this.dates = this.data.map(d => d.date);
-    this.opens = this.data.map(d => d.open);
-    this.closes = this.data.map(d => d.close);
-    this.highs = this.data.map(d => d.high);
-    this.lows = this.data.map(d => d.low);
-    this.ohlc_avg = this.data.map(d => d.ohlc);
+    this.opens = this.data.map(d => +d.open);
+    this.closes = this.data.map(d => +d.close);
+    this.highs = this.data.map(d => +d.high);
+    this.lows = this.data.map(d => +d.low);
+    this.ohcl_avg = this.data.map(d => +d.ohcl_avg);
+
+    console.log(this.dates);
+    console.log(this.ohcl_avg);
   }
 
   // draw chart
@@ -120,20 +124,22 @@ export class ChartComponent implements OnInit{
         {
           name: 'MA50',
           type: 'line',
-          data: this.calculateMA(50, this.ohlc_avg),
-          smooth: true,
+          data: this.calculateMA(50, this.ohcl_avg),
           showSymbol: false,
+          smooth: true,
           lineStyle: {
+            opacity: 0.5,
             width: 1,
           },
         },
         {
           name: 'MA200',
           type: 'line',
-          data: this.calculateMA(200, this.ohlc_avg),
-          smooth: true,
+          data: this.calculateMA(200, this.ohcl_avg),
           showSymbol: false,
+          smooth: true,
           lineStyle: {
+            opacity: 0.5,
             width: 1,
           },
         },
@@ -155,6 +161,7 @@ export class ChartComponent implements OnInit{
       }
       result.push((sum / dayCount).toFixed(2));
     }
+
     return result;
   }
 
