@@ -6,13 +6,15 @@ import { ChartComponent } from './chart/chart.component';
 
 import { NgxEchartsModule } from 'ngx-echarts';
 import { ButtonModule } from 'primeng/button';
+import { ThemeSwitcherComponent } from './theme-switcher/theme-switcher.component';
 // import { LD_CLIENT_TOKEN } from './launchdarkly.token';
 // import * as LDClient from 'launchdarkly-js-client-sdk';
 
 @NgModule({
   declarations: [
     AppComponent,
-    ChartComponent
+    ChartComponent,
+    ThemeSwitcherComponent
   ],
   imports: [
     BrowserModule,

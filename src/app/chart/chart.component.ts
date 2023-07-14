@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import  {EChartsOption} from 'echarts';
 import * as d3 from 'd3';
+import { ThemeService } from '../../theme.service';
 
 interface StockData {
   index: number;
@@ -19,7 +20,7 @@ interface StockData {
   styleUrls: ['./chart.component.css']
 })
 export class ChartComponent implements OnInit{
-  constructor() { }
+  constructor(private themeService: ThemeService) { }
   chartOption: EChartsOption = {};
   data: StockData[] = [];
   dates: string[] = [];
@@ -28,6 +29,7 @@ export class ChartComponent implements OnInit{
   highs: number[] = [];
   lows: number[] = [];
   ohcl_avg: number[] = [];
+  zippedData: number[][] = [];
 
   ngOnInit(): void {
     //fetch data from the server
@@ -36,33 +38,42 @@ export class ChartComponent implements OnInit{
       this.parseData();
       this.drawChart();
     });
+
+    this.themeService.theme$.subscribe(theme => {
+      this.switchTheme(theme);
+    });
     
+  }
+
+  switchTheme(theme: string) {
+      this.drawChart(theme);
+
   }
 
   // parse data from the server
   parseData(): void {
-    this.dates = this.data.map(d => d.date);
+    this.dates = this.data.map(d => d.date).reverse();
     this.opens = this.data.map(d => +d.open);
     this.closes = this.data.map(d => +d.close);
     this.highs = this.data.map(d => +d.high);
     this.lows = this.data.map(d => +d.low);
     this.ohcl_avg = this.data.map(d => +d.ohcl_avg);
+    this.zippedData = this.opens.map((item, index) => [item, this.closes[index], this.lows[index], this.highs[index]]).reverse();
 
     console.log(this.dates);
     console.log(this.ohcl_avg);
   }
 
+
+
   // draw chart
-  drawChart(): void {
-    // construct charting data and reverse it to make it follow the order of dates
-    const zippedData = this.opens.map((item, index) => [item, this.closes[index], this.lows[index], this.highs[index]]).reverse();
-    // reverse the dates to make it follow the order of data
-    this.dates = this.dates.reverse();
+  drawChart(theme:string = "light"): void {
     
     this.chartOption = {
+      color: theme == "dark" ? ['#2B6CB0', '#4A5568', '#ED8936', '#e6b045']:['#FD1050', '#0CF49B', '#FD1050', '#0CF49B'],
       legend: {
         data: ['Kline', 'MA50', 'MA200'],
-        inactiveColor: '#777',
+        // inactiveColor: '#777',
       },
       tooltip: {
         trigger: 'axis',
@@ -70,7 +81,7 @@ export class ChartComponent implements OnInit{
           animation: false,
           type: 'cross',
           lineStyle: {
-            color: '#376df4',
+            // color: '#376df4',
             width: 2,
             opacity: 1,
           },
@@ -79,11 +90,9 @@ export class ChartComponent implements OnInit{
       xAxis: {
         type: 'category',
         data: this.dates, 
-        axisLine:{lineStyle:{color:'#8392A5'}},
       },
       yAxis: {
         scale: true,
-        axisLine:{lineStyle:{color:'#8392A5'}},
         splitLine: {show: false}
       },
       grid: {
@@ -96,15 +105,6 @@ export class ChartComponent implements OnInit{
           },
           handleIcon:
         'path://M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
-        dataBackground: {
-          areaStyle: {
-            color: '#8392A5'
-            },
-          lineStyle: {
-            opacity: 0.8,
-            color: '#8392A5'
-            }
-          },
           brushSelect: true,
         },
         {type: 'inside'}
@@ -113,18 +113,12 @@ export class ChartComponent implements OnInit{
         {
           type: 'candlestick',
           name: 'Day',
-          data: zippedData,
-          itemStyle: {
-            color: '#FD1050',
-            color0: '#0CF49B',
-            borderColor: '#FD1050',
-            borderColor0: '#0CF49B',
-          },
+          data: this.zippedData,
         },
         {
           name: 'MA50',
           type: 'line',
-          data: this.calculateMA(50, this.ohcl_avg),
+          data: this.calculateMA(50, this.ohcl_avg.reverse()),
           showSymbol: false,
           smooth: true,
           lineStyle: {
@@ -135,7 +129,7 @@ export class ChartComponent implements OnInit{
         {
           name: 'MA200',
           type: 'line',
-          data: this.calculateMA(200, this.ohcl_avg),
+          data: this.calculateMA(200, this.ohcl_avg.reverse()),
           showSymbol: false,
           smooth: true,
           lineStyle: {
